@@ -1,39 +1,55 @@
 pragma solidity ^0.4.18;
 
-contract Wrestling{
+    /**
+    * Example script for the Ethereum development walkthrough
+    */
 
-    address public wrestler1;
-    address public wrestler2;
-    
-    bool public wrestler1Played;
-    bool public wrestler2Played;
-    
-    uint private wrestler1Deposit;
-    uint private wrestler2Deposit;
-    
-    bool public gameFinished;
+contract Wrestling {
+    /**
+    * Our wrestlers
+    */
+	address public wrestler1;
+	address public wrestler2;
+
+	bool public wrestler1Played;
+	bool public wrestler2Played;
+
+	uint private wrestler1Deposit;
+	uint private wrestler2Deposit;
+
+	bool public gameFinished;
     address public theWinner;
     uint gains;
-    
-    event WrestlingStartsEvent(address wrestler1, address wrestler2);
-    
-    event EndOfRoundEvent(uint wrestler1Deposit, uint wrestler2Deposit);
-    
-    event EndOfWrestlingEvent(address winner, uint gains);
-    
-    function Wrestling() public{
-        wrestler1 = msg.sender;
-    }
-    
-    function registerAsAnOpponent() public {
+
+    /**
+    * The logs that will be emitted in every step of the contract's life cycle
+    */
+	event WrestlingStartsEvent(address wrestler1, address wrestler2);
+	event EndOfRoundEvent(uint wrestler1Deposit, uint wrestler2Deposit);
+	event EndOfWrestlingEvent(address winner, uint gains);
+
+    /**
+    * The contract constructor
+    */
+	constructor() public {
+		wrestler1 = msg.sender;
+	}
+
+    /**
+    * A second wrestler can register as an opponent
+    */
+	function registerAsAnOpponent() public {
         require(wrestler2 == address(0));
-        
+
         wrestler2 = msg.sender;
-        
-        WrestlingStartsEvent(wrestler1, wrestler2);
-        
+
+        emit WrestlingStartsEvent(wrestler1, wrestler2);
     }
-    
+
+    /**
+    * Every round a player can put a sum of ether, if one of the player put in twice or
+    * more the money (in total) than the other did, the first wins
+    */
     function wrestle() public payable {
     	require(!gameFinished && (msg.sender == wrestler1 || msg.sender == wrestler2));
 
@@ -41,7 +57,7 @@ contract Wrestling{
     		require(wrestler1Played == false);
     		wrestler1Played = true;
     		wrestler1Deposit = wrestler1Deposit + msg.value;
-    	} else { 
+    	} else {
     		require(wrestler2Played == false);
     		wrestler2Played = true;
     		wrestler2Deposit = wrestler2Deposit + msg.value;
@@ -56,12 +72,12 @@ contract Wrestling{
     		}
     	}
     }
-    
-      function endOfRound() internal {
+
+    function endOfRound() internal {
     	wrestler1Played = false;
     	wrestler2Played = false;
 
-    	EndOfRoundEvent(wrestler1Deposit, wrestler2Deposit);
+    	emit EndOfRoundEvent(wrestler1Deposit, wrestler2Deposit);
     }
 
     function endOfGame(address winner) internal {
@@ -69,10 +85,13 @@ contract Wrestling{
         theWinner = winner;
 
         gains = wrestler1Deposit + wrestler2Deposit;
-        EndOfWrestlingEvent(winner, gains);
+        emit EndOfWrestlingEvent(winner, gains);
     }
-    
-    
+
+    /**
+    * The withdraw function, following the withdraw pattern shown and explained here:
+    * http://solidity.readthedocs.io/en/develop/common-patterns.html#withdrawal-from-contracts
+    */
     function withdraw() public {
         require(gameFinished && theWinner == msg.sender);
 
@@ -81,7 +100,4 @@ contract Wrestling{
         gains = 0;
         msg.sender.transfer(amount);
     }
-    
-    
-    
 }
